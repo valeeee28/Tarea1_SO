@@ -7,4 +7,5 @@
 
 std::vector<Actividad> cargarPlan(const std::string& nombreArchivo);
 
+
 #endif
