@@ -5,8 +5,8 @@
 #include <sys/types.h>
 #include <string>
 
-// Crea un proceso hijo para ejecutar una actividad
-pid_t crearProceso(const Actividad& actividad);
+
+pid_t crearProceso(const Actividad& actividad, int tuberia[2]);
 
 // Espera a que termine un proceso hijo
 int esperarProceso(pid_t pid);
@@ -20,5 +20,12 @@ int enviarMensaje(int fdEscritura, const std::string& mensaje);
 
 // Recibe un mensaje desde la tuberia
 std::string recibirMensaje(int fdLectura);
+
+// Espera al proceso hijo y recibe su mensaje
+int esperarYRecibir(
+    pid_t pid,
+    int fdLectura,
+    std::string& mensaje
+);
 
 #endif

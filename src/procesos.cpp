@@ -5,12 +5,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-pid_t crearProceso(const Actividad& actividad) {
+pid_t crearProceso(const Actividad& actividad, int tuberia[2]) {
 
-pid_t pid = fork();//divide el proceso en dos
+    pid_t pid = fork();
 
     if (pid < 0) {
-        // Error al crear el proceso
         std::cerr << "Error al crear el proceso para: "
                   << actividad.nombre << std::endl;
 
@@ -18,23 +17,36 @@ pid_t pid = fork();//divide el proceso en dos
     }
 
     if (pid == 0) {
-        // Este bloque lo ejecuta solamente el proceso hijo
+        // PROCESO HIJO
+
+        // El hijo no necesita leer del pipe
+        close(tuberia[0]);
 
         std::cout << "Iniciando actividad: "
                   << actividad.nombre << std::endl;
 
-        // El tiempo de la actividad viene en milisegundos.
-        // usleep trabaja en microsegundos.
+        // Simula la duracion de la actividad
         usleep(actividad.tiempo * 1000);
 
         std::cout << "Actividad terminada: "
                   << actividad.nombre << std::endl;
 
+        // El hijo avisa que termino
+        std::string mensaje = "TERMINADA:" + actividad.id;
+
+        enviarMensaje(tuberia[1], mensaje);
+
+        // Ya no necesita escribir
+        close(tuberia[1]);
+
         _exit(0);
     }
 
-    // Este código lo ejecuta el proceso padre.
-    // Devuelve el PID del hijo que acaba de crear.
+    // PROCESO PADRE
+
+    // El padre no escribe en este pipe
+    close(tuberia[1]);
+
     return pid;
 }
 
@@ -102,4 +114,22 @@ std::string recibirMensaje(int fdLectura) {
     buffer[bytesLeidos] = '\0';
 
     return std::string(buffer);
+}
+
+int esperarYRecibir(
+    pid_t pid,
+    int fdLectura,
+    std::string& mensaje
+) {
+
+    // El padre recibe el mensaje enviado por el hijo
+    mensaje = recibirMensaje(fdLectura);
+
+    // Ya no necesitamos seguir leyendo de este pipe
+    close(fdLectura);
+
+    // Esperamos a que termine el proceso hijo
+    int resultado = esperarProceso(pid);
+
+    return resultado;
 }
