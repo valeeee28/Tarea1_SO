@@ -79,3 +79,27 @@ int enviarMensaje(int fdEscritura, const std::string& mensaje) {
 
     return 0;
 }
+
+std::string recibirMensaje(int fdLectura) {
+
+    char buffer[256];
+
+    ssize_t bytesLeidos = read(
+        fdLectura,
+        buffer,
+        sizeof(buffer) - 1
+    );
+
+    if (bytesLeidos == -1) {
+        std::cerr << "Error al recibir mensaje por la tuberia." << std::endl;
+        return "";
+    }
+
+    if (bytesLeidos == 0) {
+        return "";
+    }
+
+    buffer[bytesLeidos] = '\0';
+
+    return std::string(buffer);
+}
