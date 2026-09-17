@@ -28,4 +28,14 @@ int esperarYRecibir(
     std::string& mensaje
 );
 
+// Configura el manejo de Ctrl+C (SIGINT)
+void configurarSIGINT();
+
+// Registra un proceso hijo como activo
+void registrarProceso(pid_t pid);
+
+// Elimina un proceso de la lista de activos
+void eliminarProceso(pid_t pid);
+
+
 #endif
