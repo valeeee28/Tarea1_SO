@@ -19,6 +19,7 @@ struct Actividad {
 
     std::vector<std::string> dependencias;
     std::vector<std::string> dependientes;
+     int dependenciasRestantes;
 
     Estado estado;
 };

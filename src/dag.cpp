@@ -6,6 +6,11 @@ void construirDependientes(std::vector<Actividad>& actividades) {
 
     for (auto& actividad : actividades) {
 
+        actividad.dependientes.clear();
+
+        actividad.dependenciasRestantes =
+            static_cast<int>(actividad.dependencias.size());
+
         for (const auto& dependencia : actividad.dependencias) {
 
             for (auto& actividadDependencia : actividades) {

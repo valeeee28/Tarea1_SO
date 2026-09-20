@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "dag.h"
+#include "planificador.h"
 #include <iostream>
 #include <vector>
 
@@ -46,5 +47,71 @@ if (validarDAG(actividades)) {
     std::cout << "Cantidad de actividades cargadas: "
               << actividades.size() << std::endl;
 
+std::vector<std::string> listas =
+    obtenerActividadesListas(actividades, K);
+
+std::cout << "Actividades listas para ejecutar: ";
+
+for (const auto& id : listas) {
+    std::cout << id << " ";
+}
+
+std::cout << std::endl;
+
+iniciarActividades(actividades, listas);
+
+std::cout << "Estados despues de iniciar:" << std::endl;
+
+for (const auto& actividad : actividades) {
+    std::cout << "Actividad " << actividad.id
+              << ": ";
+
+    if (actividad.estado == Estado::PENDIENTE) {
+        std::cout << "PENDIENTE";
+    } else if (actividad.estado == Estado::EJECUTANDO) {
+        std::cout << "EJECUTANDO";
+    } else if (actividad.estado == Estado::TERMINADA) {
+        std::cout << "TERMINADA";
+    }
+
+    std::cout << std::endl;
+}
+
+std::vector<std::string> terminadas = {"1", "2"};
+
+terminarActividades(actividades, terminadas);
+
+std::vector<std::string> nuevasListas =
+    obtenerActividadesListas(actividades, K);
+
+std::cout << "Nuevas actividades listas para ejecutar: ";
+
+for (const auto& id : nuevasListas) {
+    std::cout << id << " ";
+}
+terminarActividades(actividades, nuevasListas);
+
+std::vector<std::string> siguientes =
+    obtenerActividadesListas(actividades, K);
+
+std::cout << "Siguientes actividades listas para ejecutar: ";
+
+for (const auto& id : siguientes) {
+    std::cout << id << " ";
+}
+
+std::cout << std::endl;
+terminarActividades(actividades, siguientes);
+
+std::vector<std::string> finales =
+    obtenerActividadesListas(actividades, K);
+
+std::cout << "Ultima actividad lista para ejecutar: ";
+
+for (const auto& id : finales) {
+    std::cout << id << " ";
+}
+
+std::cout << std::endl;
     return 0;
 }
