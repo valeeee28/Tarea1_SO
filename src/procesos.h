@@ -5,6 +5,12 @@
 #include <sys/types.h>
 #include <string>
 
+struct ProcesoActividad {
+    pid_t pid;
+    std::string idActividad;
+    int fdLectura;
+};
+
 
 pid_t crearProceso(const Actividad& actividad, int tuberia[2]);
 
@@ -43,5 +49,32 @@ void cancelarRamaPorFallo(
     const std::string& idFallida
 );
 
+// Espera a cualquiera de los procesos hijos activos.
+// Devuelve el PID del proceso que termino.
+// codigoSalida indica si termino correctamente o con error.
+pid_t esperarCualquierProceso(int& codigoSalida);
+
+// Busca un proceso por su PID.
+// Devuelve su posicion dentro del vector o -1 si no existe.
+int buscarProcesoPorPid(
+    const std::vector<ProcesoActividad>& procesos,
+    pid_t pid
+);
+
+// Crea el proceso de una actividad y lo registra
+// dentro de la lista de procesos en ejecucion.
+pid_t lanzarActividad(
+    const Actividad& actividad,
+    std::vector<ProcesoActividad>& procesos
+);
+
+// Espera al primer proceso que termine, identifica su actividad
+// y recibe el mensaje enviado por el hijo.
+bool recogerProcesoTerminado(
+    std::vector<ProcesoActividad>& procesos,
+    std::string& idActividad,
+    std::string& mensaje,
+    int& codigoSalida
+);
 
 #endif

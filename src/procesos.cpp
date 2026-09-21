@@ -281,3 +281,131 @@ void cancelarRamaPorFallo(
         }
     }
 }
+
+pid_t esperarCualquierProceso(int& codigoSalida) {
+
+    int estado;
+
+    // -1 significa: esperar al primer hijo que termine
+    pid_t pid = waitpid(-1, &estado, 0);
+
+    if (pid == -1) {
+        std::cerr << "Error al esperar un proceso hijo." << std::endl;
+        codigoSalida = -1;
+        return -1;
+    }
+
+    // Ya termino, por lo tanto deja de estar activo
+    eliminarProceso(pid);
+
+    // Termino normalmente
+    if (WIFEXITED(estado)) {
+        codigoSalida = WEXITSTATUS(estado);
+    }
+
+    // Termino debido a una señal
+    else if (WIFSIGNALED(estado)) {
+        codigoSalida = 128 + WTERMSIG(estado);
+    }
+
+    else {
+        codigoSalida = -1;
+    }
+
+    return pid;
+}
+
+int buscarProcesoPorPid(
+    const std::vector<ProcesoActividad>& procesos,
+    pid_t pid
+) {
+
+    for (size_t i = 0; i < procesos.size(); i++) {
+
+        if (procesos[i].pid == pid) {
+            return static_cast<int>(i);
+        }
+    }
+
+    return -1;
+}
+
+pid_t lanzarActividad(
+    const Actividad& actividad,
+    std::vector<ProcesoActividad>& procesos
+) {
+
+    int tuberia[2];
+
+    // Crear pipe para esta actividad
+    if (crearPipe(tuberia) == -1) {
+        return -1;
+    }
+
+    // Crear proceso hijo
+    pid_t pid = crearProceso(actividad, tuberia);
+
+    if (pid == -1) {
+        close(tuberia[0]);
+        close(tuberia[1]);
+        return -1;
+    }
+
+    // Guardar relacion entre PID, actividad y pipe
+    ProcesoActividad proceso;
+
+    proceso.pid = pid;
+    proceso.idActividad = actividad.id;
+    proceso.fdLectura = tuberia[0];
+
+    procesos.push_back(proceso);
+
+    return pid;
+}
+
+bool recogerProcesoTerminado(
+    std::vector<ProcesoActividad>& procesos,
+    std::string& idActividad,
+    std::string& mensaje,
+    int& codigoSalida
+) {
+
+    if (procesos.empty()) {
+        return false;
+    }
+
+    // Esperar al primer hijo que termine
+    pid_t pidTerminado = esperarCualquierProceso(codigoSalida);
+
+    if (pidTerminado == -1) {
+        return false;
+    }
+
+    // Averiguar a que actividad pertenecia ese PID
+    int posicion = buscarProcesoPorPid(procesos, pidTerminado);
+
+    if (posicion == -1) {
+        std::cerr << "No se encontro el proceso terminado."
+                  << std::endl;
+
+        return false;
+    }
+
+    // Obtener el ID de la actividad
+    idActividad = procesos[posicion].idActividad;
+
+    // Leer el mensaje que dejo el hijo en su pipe
+    mensaje = recibirMensaje(
+        procesos[posicion].fdLectura
+    );
+
+    // Cerrar el extremo de lectura
+    close(procesos[posicion].fdLectura);
+
+    // Sacar este proceso de la lista de procesos en ejecucion
+    procesos.erase(
+        procesos.begin() + posicion
+    );
+
+    return true;
+}

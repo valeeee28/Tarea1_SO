@@ -1,7 +1,7 @@
 #include "parser.h"
 #include "dag.h"
 #include "planificador.h"
-#include "procesos.h"
+//#include "procesos.h"
 #include <iostream>
 #include <vector>
 
@@ -14,11 +14,13 @@ int main(int argc, char* argv[]) {
 
     std::string nombreArchivo = argv[1];
     int K = std::stoi(argv[2]);
+    //configurarSIGINT();
 
     std::cout << "Archivo: " << nombreArchivo << std::endl;
     std::cout << "Limite de concurrencia K: " << K << std::endl;
 
     std::vector<Actividad> actividades = cargarPlan(nombreArchivo);
+    //std::vector<ProcesoActividad> procesosEnEjecucion;
 
     construirDependientes(actividades);
 if (validarDAG(actividades)) {
@@ -61,6 +63,8 @@ std::cout << std::endl;
 
 iniciarActividades(actividades, listas);
 
+
+
 std::cout << "Estados despues de iniciar:" << std::endl;
 
 for (const auto& actividad : actividades) {
@@ -79,8 +83,8 @@ for (const auto& actividad : actividades) {
 }
 
 std::vector<std::string> terminadas = {"1", "2"};
-
 terminarActividades(actividades, terminadas);
+
 
 std::vector<std::string> nuevasListas =
     obtenerActividadesListas(actividades, K);
