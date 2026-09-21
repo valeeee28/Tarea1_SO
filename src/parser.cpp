@@ -33,7 +33,10 @@ std::vector<Actividad> cargarPlan(const std::string& nombreArchivo) {
     std::string linea;
 
     while (std::getline(archivo, linea)) {
-
+     
+        if(quitarEspacios(linea).empty()) {
+            continue;
+            }
         std::stringstream ss(linea);
 
         std::string id;

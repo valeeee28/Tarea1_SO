@@ -4,6 +4,7 @@
 #include "actividad.h"
 #include <sys/types.h>
 #include <string>
+#include <vector>
 
 struct ProcesoActividad {
     pid_t pid;
@@ -76,5 +77,9 @@ bool recogerProcesoTerminado(
     std::string& mensaje,
     int& codigoSalida
 );
-
+pid_t lanzarActividadConInsumos(
+    const Actividad& actividad,
+    std::vector<ProcesoActividad>& procesos,
+    const std::vector<std::string>& insumos
+);
 #endif

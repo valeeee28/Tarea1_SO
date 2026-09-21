@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 int main(int argc, char* argv[]) {
 
@@ -88,7 +89,12 @@ int main(int argc, char* argv[]) {
 
     std::vector<ProcesoActividad> procesosEnEjecucion;
 
-
+// Mensajes que cada actividad recibira
+// desde sus actividades predecesoras
+std::unordered_map<
+    std::string,
+    std::vector<std::string>
+           >insumosPendientes;
     // =========================================
     // CICLO PRINCIPAL DEL PLANIFICADOR
     // =========================================
@@ -128,12 +134,19 @@ int main(int argc, char* argv[]) {
 
                     if (actividad.id == id) {
 
-                        pid_t pid =
-                            lanzarActividad(
-                                actividad,
-                                procesosEnEjecucion
-                            );
+                        std::vector<std::string> insumos =
+                          insumosPendientes[id];
 
+                            pid_t pid = 
+                         lanzarActividadConInsumos(
+                    actividad,
+                    procesosEnEjecucion,
+                     insumos
+    );
+
+if (pid != -1) {
+    insumosPendientes.erase(id);
+}
                         if (pid == -1) {
 
                             std::cerr
@@ -226,6 +239,23 @@ int main(int argc, char* argv[]) {
         // =====================================
 
         if (codigoSalida == 0) {
+            // Guardar el mensaje como insumo
+// para todas las actividades dependientes
+for (const auto& actividad : actividades) {
+
+    if (actividad.id == idFinalizada) {
+
+        for (const auto& idDependiente :
+             actividad.dependientes) {
+
+            insumosPendientes[
+                idDependiente
+            ].push_back(mensaje);
+        }
+
+        break;
+    }
+}
 
             std::vector<std::string> terminadas = {
                 idFinalizada

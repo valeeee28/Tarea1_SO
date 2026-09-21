@@ -6,13 +6,52 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <unordered_map>
-
+#include <cerrno>
 // Lista de procesos hijos que se encuentran activos
 static const int MAX_PROCESOS_ACTIVOS = 10000;
 
 static pid_t procesosActivos[MAX_PROCESOS_ACTIVOS];
 static int cantidadProcesosActivos = 0;
+static std::string recibirHastaCierre(int fdLectura) {
 
+    char buffer[256];
+    std::string resultado;
+
+    while (true) {
+
+        ssize_t bytesLeidos = read(
+            fdLectura,
+            buffer,
+            sizeof(buffer)
+        );
+
+        if (bytesLeidos > 0) {
+
+            resultado.append(
+                buffer,
+                static_cast<size_t>(bytesLeidos)
+            );
+
+            continue;
+        }
+
+        if (bytesLeidos == 0) {
+            break;
+        }
+
+        if (errno == EINTR) {
+            continue;
+        }
+
+        std::cerr
+            << "Error al recibir insumos por la tuberia."
+            << std::endl;
+
+        break;
+    }
+
+    return resultado;
+}
 pid_t crearProceso(const Actividad& actividad, int tuberia[2]) {
 
     pid_t pid = fork();
@@ -409,5 +448,166 @@ bool recogerProcesoTerminado(
 
     return true;
 }
+pid_t lanzarActividadConInsumos(
+    const Actividad& actividad,
+    std::vector<ProcesoActividad>& procesos,
+    const std::vector<std::string>& insumos
+) {
 
-//jsmsj
+    // Pipe 1: HIJO -> PADRE
+    // El hijo avisa cuando termina
+    int pipeResultado[2];
+
+    // Pipe 2: PADRE -> HIJO
+    // El padre entrega los mensajes de las dependencias
+    int pipeEntrada[2];
+
+    if (crearPipe(pipeResultado) == -1) {
+        return -1;
+    }
+
+    if (crearPipe(pipeEntrada) == -1) {
+
+        close(pipeResultado[0]);
+        close(pipeResultado[1]);
+
+        return -1;
+    }
+
+    pid_t pid = fork();
+
+    if (pid < 0) {
+
+        std::cerr
+            << "Error al crear el proceso para: "
+            << actividad.nombre
+            << std::endl;
+
+        close(pipeResultado[0]);
+        close(pipeResultado[1]);
+
+        close(pipeEntrada[0]);
+        close(pipeEntrada[1]);
+
+        return -1;
+    }
+
+    // ==============================
+    // PROCESO HIJO
+    // ==============================
+
+    if (pid == 0) {
+
+        signal(SIGINT, SIG_DFL);
+
+        // El hijo solo escribe el resultado
+        close(pipeResultado[0]);
+
+        // El hijo solo lee los insumos
+        close(pipeEntrada[1]);
+
+        std::string mensajesRecibidos =
+            recibirHastaCierre(pipeEntrada[0]);
+
+        close(pipeEntrada[0]);
+
+        if (!mensajesRecibidos.empty()) {
+
+            std::cout
+                << "Actividad "
+                << actividad.id
+                << " recibio insumos:"
+                << std::endl
+                << mensajesRecibidos;
+        }
+
+        std::cout
+            << "Iniciando actividad: "
+            << actividad.nombre
+            << std::endl;
+
+        usleep(actividad.tiempo * 1000);
+
+        std::cout
+            << "Actividad terminada: "
+            << actividad.nombre
+            << std::endl;
+
+        std::string mensaje =
+            "TERMINADA:" + actividad.id;
+
+        if (
+            enviarMensaje(
+                pipeResultado[1],
+                mensaje
+            ) == -1
+        ) {
+
+            close(pipeResultado[1]);
+            _exit(1);
+        }
+
+        close(pipeResultado[1]);
+
+        _exit(0);
+    }
+
+    // ==============================
+    // PROCESO PADRE
+    // ==============================
+
+    // El padre solo lee el resultado
+    close(pipeResultado[1]);
+
+    // El padre solo escribe los insumos
+    close(pipeEntrada[0]);
+
+    registrarProceso(pid);
+
+    // Enviar al hijo los mensajes recibidos
+    // desde sus actividades anteriores
+    for (const auto& insumo : insumos) {
+
+        std::string mensajeAcotado =
+            insumo.substr(0, 250);
+
+        mensajeAcotado += "\n";
+
+        if (
+            enviarMensaje(
+                pipeEntrada[1],
+                mensajeAcotado
+            ) == -1
+        ) {
+
+            std::cerr
+                << "Error al enviar insumos a la actividad "
+                << actividad.id
+                << std::endl;
+
+            close(pipeEntrada[1]);
+            close(pipeResultado[0]);
+
+            kill(pid, SIGTERM);
+            waitpid(pid, nullptr, 0);
+
+            eliminarProceso(pid);
+
+            return -1;
+        }
+    }
+
+    // Cerrar el pipe indica al hijo
+    // que ya no hay mas mensajes
+    close(pipeEntrada[1]);
+
+    ProcesoActividad proceso;
+
+    proceso.pid = pid;
+    proceso.idActividad = actividad.id;
+    proceso.fdLectura = pipeResultado[0];
+
+    procesos.push_back(proceso);
+
+    return pid;
+}
