@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "dag.h"
 #include "planificador.h"
+#include "procesos.h"
 #include <iostream>
 #include <vector>
 
