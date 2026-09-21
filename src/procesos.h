@@ -37,5 +37,11 @@ void registrarProceso(pid_t pid);
 // Elimina un proceso de la lista de activos
 void eliminarProceso(pid_t pid);
 
+// Marca una actividad como fallida y cancela toda su rama dependiente
+void cancelarRamaPorFallo(
+    std::vector<Actividad>& actividades,
+    const std::string& idFallida
+);
+
 
 #endif

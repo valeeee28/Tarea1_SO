@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <unordered_map>
 
 // Lista de procesos hijos que se encuentran activos
 static const int MAX_PROCESOS_ACTIVOS = 10000;
@@ -40,14 +41,20 @@ pid_t crearProceso(const Actividad& actividad, int tuberia[2]) {
         std::cout << "Actividad terminada: "
                   << actividad.nombre << std::endl;
 
-        // El hijo avisa que termino
-        std::string mensaje = "TERMINADA:" + actividad.id;
+       std::string mensaje = "TERMINADA:" + actividad.id;
 
-        enviarMensaje(tuberia[1], mensaje);
+        if (enviarMensaje(tuberia[1], mensaje) == -1) {
+
+        close(tuberia[1]);
+
+        // El proceso termina indicando que ocurrió un error
+         _exit(1);
+        }
 
         // Ya no necesita escribir
         close(tuberia[1]);
 
+        // 0 significa que la actividad terminó correctamente
         _exit(0);
     }
 
@@ -201,4 +208,76 @@ void configurarSIGINT() {
     accion.sa_flags = 0;
 
     sigaction(SIGINT, &accion, nullptr);
+}
+
+
+void cancelarRamaPorFallo(
+    std::vector<Actividad>& actividades,
+    const std::string& idFallida
+) {
+
+    // Relaciona cada ID con su posicion dentro del vector.
+    // Esto permite buscar rapidamente incluso con muchas actividades.
+    std::unordered_map<std::string, size_t> indice;
+
+    indice.reserve(actividades.size());
+
+    for (size_t i = 0; i < actividades.size(); i++) {
+        indice[actividades[i].id] = i;
+    }
+
+    // Buscar la actividad que fallo
+    auto itFallida = indice.find(idFallida);
+
+    if (itFallida == indice.end()) {
+        std::cerr << "No se encontro la actividad fallida: "
+                  << idFallida << std::endl;
+        return;
+    }
+
+    // Marcar solamente la actividad original como FALLIDA
+    Actividad& fallida = actividades[itFallida->second];
+
+    fallida.estado = Estado::FALLIDA;
+
+    // Pila para recorrer todos los dependientes de la rama
+    std::vector<size_t> pendientes;
+
+    for (const auto& idDependiente : fallida.dependientes) {
+
+        auto it = indice.find(idDependiente);
+
+        if (it != indice.end()) {
+            pendientes.push_back(it->second);
+        }
+    }
+
+    // Cancelar toda la rama descendiente
+    while (!pendientes.empty()) {
+
+        size_t posicion = pendientes.back();
+        pendientes.pop_back();
+
+        Actividad& actividad = actividades[posicion];
+
+        // Evitar procesar dos veces una actividad
+        if (actividad.estado == Estado::CANCELADA ||
+            actividad.estado == Estado::FALLIDA ||
+            actividad.estado == Estado::TERMINADA) {
+
+            continue;
+        }
+
+        actividad.estado = Estado::CANCELADA;
+
+        // Agregar también sus dependientes
+        for (const auto& idDependiente : actividad.dependientes) {
+
+            auto it = indice.find(idDependiente);
+
+            if (it != indice.end()) {
+                pendientes.push_back(it->second);
+            }
+        }
+    }
 }
