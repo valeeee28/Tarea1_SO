@@ -1,0 +1,4 @@
+1 : actividad_larga_1 : 10000 :
+2 : actividad_larga_2 : 10000 :
+3 : actividad_larga_3 : 10000 :
+4 : actividad_dependiente : 1000 : 1, 2, 3
