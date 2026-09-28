@@ -13,8 +13,7 @@ int main() {
 
     actividades.reserve(N);
 
-    // Crear una cadena grande:
-    // 1 -> 2 -> 3 -> 4 -> ... -> 10000
+    
 
     for (int i = 1; i <= N; i++) {
 
@@ -50,7 +49,7 @@ int main() {
 
     auto inicio = std::chrono::high_resolution_clock::now();
 
-    // Simular fallo en la actividad 1
+    
     cancelarRamaPorFallo(
         actividades,
         "1"

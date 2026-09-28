@@ -5,10 +5,10 @@
 
 int main() {
 
-    // Activar el manejo de Ctrl+C
+    
     configurarSIGINT();
 
-    // Actividad larga para tener tiempo de presionar Ctrl+C
+    
     Actividad actividad;
 
     actividad.id = "99";
@@ -16,14 +16,14 @@ int main() {
     actividad.tiempo = 10000; // 10 segundos
     actividad.estado = Estado::PENDIENTE;
 
-    // Crear pipe
+    
     int tuberia[2];
 
     if (crearPipe(tuberia) == -1) {
         return 1;
     }
 
-    // Crear proceso hijo
+    
     pid_t pid = crearProceso(actividad, tuberia);
 
     if (pid == -1) {

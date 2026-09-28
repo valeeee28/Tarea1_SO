@@ -10,9 +10,7 @@ int main() {
 
     std::vector<ProcesoActividad> procesos;
 
-    // -------------------------
-    // ACTIVIDAD 1
-    // -------------------------
+    
     Actividad a1;
 
     a1.id = "1";
@@ -21,9 +19,7 @@ int main() {
     a1.dependenciasRestantes = 0;
     a1.estado = Estado::PENDIENTE;
 
-    // -------------------------
-    // ACTIVIDAD 2
-    // -------------------------
+    
     Actividad a2;
 
     a2.id = "2";
@@ -32,9 +28,7 @@ int main() {
     a2.dependenciasRestantes = 0;
     a2.estado = Estado::PENDIENTE;
 
-    // -------------------------
-    // ACTIVIDAD 3
-    // -------------------------
+    
     Actividad a3;
 
     a3.id = "3";
@@ -43,7 +37,7 @@ int main() {
     a3.dependenciasRestantes = 0;
     a3.estado = Estado::PENDIENTE;
 
-    // Lanzar las tres actividades sin esperar entre medio
+    
     lanzarActividad(a1, procesos);
     lanzarActividad(a2, procesos);
     lanzarActividad(a3, procesos);
@@ -51,7 +45,7 @@ int main() {
     std::cout << "\nSe lanzaron 3 procesos." << std::endl;
     std::cout << "Esperando resultados...\n" << std::endl;
 
-    // Recoger los tres procesos a medida que terminan
+    
     while (!procesos.empty()) {
 
         std::string idActividad;

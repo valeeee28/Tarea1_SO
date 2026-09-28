@@ -6,7 +6,7 @@
 
 int main() {
 
-    // Actividad de prueba
+    
     Actividad actividad;
 
     actividad.id = "1";
@@ -14,14 +14,14 @@ int main() {
     actividad.tiempo = 500;
     actividad.estado = Estado::PENDIENTE;
 
-    // Crear la tuberia
+    
     int tuberia[2];
 
     if (crearPipe(tuberia) == -1) {
         return 1;
     }
 
-    // Crear el proceso hijo
+    
     pid_t pid = crearProceso(actividad, tuberia);
 
     if (pid == -1) {
@@ -30,7 +30,7 @@ int main() {
         return 1;
     }
 
-    // El padre recibe el mensaje del hijo
+    
     std::string mensaje;
 
     int resultado = esperarYRecibir(

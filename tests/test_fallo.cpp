@@ -15,13 +15,13 @@ int main() {
     }
 
     if (pid == 0) {
-        // Simulamos que una actividad falla internamente
+        
         std::cout << "La actividad de prueba ha fallado." << std::endl;
 
         _exit(1);
     }
 
-    // El padre espera al hijo y obtiene su codigo de salida
+    
     int resultado = esperarProceso(pid);
 
     if (resultado == 0) {

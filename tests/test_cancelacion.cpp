@@ -86,7 +86,7 @@ int main() {
     actividades.push_back(a5);
     actividades.push_back(a6);
 
-    // Simulamos que falla la actividad 3
+    
     cancelarRamaPorFallo(actividades, "3");
 
     std::cout << "Estados despues del fallo:" << std::endl;
