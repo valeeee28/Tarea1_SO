@@ -1,13 +1,13 @@
 #include "procesos.h"
 
 #include <iostream>
-#include <unistd.h>     // fork(), usleep(), _exit()
+#include <unistd.h>     
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <unordered_map>
 #include <cerrno>
-// Lista de procesos hijos que se encuentran activos
+
 static const int MAX_PROCESOS_ACTIVOS = 10000;
 
 static pid_t procesosActivos[MAX_PROCESOS_ACTIVOS];
@@ -64,17 +64,16 @@ pid_t crearProceso(const Actividad& actividad, int tuberia[2]) {
     }
 
     if (pid == 0) {
-        // PROCESO HIJO
-        // El hijo usa el comportamiento normal de SIGINT
+        
         signal(SIGINT, SIG_DFL);
 
-        // El hijo no necesita leer del pipe
+        
         close(tuberia[0]);
 
         std::cout << "Iniciando actividad: "
                   << actividad.nombre << std::endl;
 
-        // Simula la duracion de la actividad
+        
         usleep(actividad.tiempo * 1000);
 
         std::cout << "Actividad terminada: "
@@ -86,20 +85,18 @@ pid_t crearProceso(const Actividad& actividad, int tuberia[2]) {
 
         close(tuberia[1]);
 
-        // El proceso termina indicando que ocurrió un error
+        
          _exit(1);
         }
 
-        // Ya no necesita escribir
+        
         close(tuberia[1]);
 
-        // 0 significa que la actividad terminó correctamente
+        
         _exit(0);
     }
 
-    // PROCESO PADRE
-
-    // El padre no escribe en este pipe
+    
     close(tuberia[1]);
 
     registrarProceso(pid);
@@ -180,13 +177,13 @@ int esperarYRecibir(
     std::string& mensaje
 ) {
 
-    // El padre recibe el mensaje enviado por el hijo
+    
     mensaje = recibirMensaje(fdLectura);
 
-    // Ya no necesitamos seguir leyendo de este pipe
+    
     close(fdLectura);
 
-    // Esperamos a que termine el proceso hijo
+    
     int resultado = esperarProceso(pid);
 
     eliminarProceso(pid);
@@ -221,18 +218,18 @@ void eliminarProceso(pid_t pid) {
 
 static void manejarSIGINT(int) {
 
-    // Terminar todos los procesos hijos que siguen activos
+    
     for (int i = 0; i < cantidadProcesosActivos; i++) {
         kill(procesosActivos[i], SIGTERM);
     }
 
-    // Mensaje simple y seguro dentro de una señal
+    
     const char mensaje[] =
         "\nSIGINT recibido. Cancelando todas las actividades...\n";
 
     write(STDERR_FILENO, mensaje, sizeof(mensaje) - 1);
 
-    // Termina inmediatamente el proceso padre
+    
     _exit(130);
 }
 
@@ -255,8 +252,7 @@ void cancelarRamaPorFallo(
     const std::string& idFallida
 ) {
 
-    // Relaciona cada ID con su posicion dentro del vector.
-    // Esto permite buscar rapidamente incluso con muchas actividades.
+    
     std::unordered_map<std::string, size_t> indice;
 
     indice.reserve(actividades.size());
@@ -265,7 +261,7 @@ void cancelarRamaPorFallo(
         indice[actividades[i].id] = i;
     }
 
-    // Buscar la actividad que fallo
+    
     auto itFallida = indice.find(idFallida);
 
     if (itFallida == indice.end()) {
@@ -274,12 +270,12 @@ void cancelarRamaPorFallo(
         return;
     }
 
-    // Marcar solamente la actividad original como FALLIDA
+    
     Actividad& fallida = actividades[itFallida->second];
 
     fallida.estado = Estado::FALLIDA;
 
-    // Pila para recorrer todos los dependientes de la rama
+    
     std::vector<size_t> pendientes;
 
     for (const auto& idDependiente : fallida.dependientes) {
@@ -291,7 +287,7 @@ void cancelarRamaPorFallo(
         }
     }
 
-    // Cancelar toda la rama descendiente
+    
     while (!pendientes.empty()) {
 
         size_t posicion = pendientes.back();
@@ -299,7 +295,7 @@ void cancelarRamaPorFallo(
 
         Actividad& actividad = actividades[posicion];
 
-        // Evitar procesar dos veces una actividad
+        
         if (actividad.estado == Estado::CANCELADA ||
             actividad.estado == Estado::FALLIDA ||
             actividad.estado == Estado::TERMINADA) {
@@ -309,7 +305,7 @@ void cancelarRamaPorFallo(
 
         actividad.estado = Estado::CANCELADA;
 
-        // Agregar también sus dependientes
+        
         for (const auto& idDependiente : actividad.dependientes) {
 
             auto it = indice.find(idDependiente);
@@ -325,7 +321,7 @@ pid_t esperarCualquierProceso(int& codigoSalida) {
 
     int estado;
 
-    // -1 significa: esperar al primer hijo que termine
+    
     pid_t pid = waitpid(-1, &estado, 0);
 
     if (pid == -1) {
@@ -334,15 +330,14 @@ pid_t esperarCualquierProceso(int& codigoSalida) {
         return -1;
     }
 
-    // Ya termino, por lo tanto deja de estar activo
+    
     eliminarProceso(pid);
 
-    // Termino normalmente
     if (WIFEXITED(estado)) {
         codigoSalida = WEXITSTATUS(estado);
     }
 
-    // Termino debido a una señal
+    
     else if (WIFSIGNALED(estado)) {
         codigoSalida = 128 + WTERMSIG(estado);
     }
@@ -376,12 +371,12 @@ pid_t lanzarActividad(
 
     int tuberia[2];
 
-    // Crear pipe para esta actividad
+    
     if (crearPipe(tuberia) == -1) {
         return -1;
     }
 
-    // Crear proceso hijo
+    
     pid_t pid = crearProceso(actividad, tuberia);
 
     if (pid == -1) {
@@ -390,7 +385,7 @@ pid_t lanzarActividad(
         return -1;
     }
 
-    // Guardar relacion entre PID, actividad y pipe
+    
     ProcesoActividad proceso;
 
     proceso.pid = pid;
@@ -413,14 +408,14 @@ bool recogerProcesoTerminado(
         return false;
     }
 
-    // Esperar al primer hijo que termine
+    
     pid_t pidTerminado = esperarCualquierProceso(codigoSalida);
 
     if (pidTerminado == -1) {
         return false;
     }
 
-    // Averiguar a que actividad pertenecia ese PID
+    
     int posicion = buscarProcesoPorPid(procesos, pidTerminado);
 
     if (posicion == -1) {
@@ -430,18 +425,18 @@ bool recogerProcesoTerminado(
         return false;
     }
 
-    // Obtener el ID de la actividad
+    
     idActividad = procesos[posicion].idActividad;
 
-    // Leer el mensaje que dejo el hijo en su pipe
+    
     mensaje = recibirMensaje(
         procesos[posicion].fdLectura
     );
 
-    // Cerrar el extremo de lectura
+    
     close(procesos[posicion].fdLectura);
 
-    // Sacar este proceso de la lista de procesos en ejecucion
+    
     procesos.erase(
         procesos.begin() + posicion
     );
@@ -454,12 +449,10 @@ pid_t lanzarActividadConInsumos(
     const std::vector<std::string>& insumos
 ) {
 
-    // Pipe 1: HIJO -> PADRE
-    // El hijo avisa cuando termina
+    
     int pipeResultado[2];
 
-    // Pipe 2: PADRE -> HIJO
-    // El padre entrega los mensajes de las dependencias
+    
     int pipeEntrada[2];
 
     if (crearPipe(pipeResultado) == -1) {
@@ -492,18 +485,16 @@ pid_t lanzarActividadConInsumos(
         return -1;
     }
 
-    // ==============================
-    // PROCESO HIJO
-    // ==============================
+    
 
     if (pid == 0) {
 
         signal(SIGINT, SIG_DFL);
 
-        // El hijo solo escribe el resultado
+        
         close(pipeResultado[0]);
 
-        // El hijo solo lee los insumos
+        
         close(pipeEntrada[1]);
 
         std::string mensajesRecibidos =
@@ -552,20 +543,17 @@ pid_t lanzarActividadConInsumos(
         _exit(0);
     }
 
-    // ==============================
-    // PROCESO PADRE
-    // ==============================
+    
 
-    // El padre solo lee el resultado
+    
     close(pipeResultado[1]);
 
-    // El padre solo escribe los insumos
+    
     close(pipeEntrada[0]);
 
     registrarProceso(pid);
 
-    // Enviar al hijo los mensajes recibidos
-    // desde sus actividades anteriores
+    
     for (const auto& insumo : insumos) {
 
         std::string mensajeAcotado =
@@ -597,8 +585,7 @@ pid_t lanzarActividadConInsumos(
         }
     }
 
-    // Cerrar el pipe indica al hijo
-    // que ya no hay mas mensajes
+    
     close(pipeEntrada[1]);
 
     ProcesoActividad proceso;

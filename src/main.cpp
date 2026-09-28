@@ -10,10 +10,7 @@
 
 int main(int argc, char* argv[]) {
 
-    // =========================================
-    // VALIDAR ARGUMENTOS
-    // =========================================
-
+   
     if (argc != 3) {
         std::cerr
             << "Uso: ./planificador plan.txt K"
@@ -33,9 +30,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // =========================================
-    // ACTIVAR CTRL+C / SIGINT
-    // =========================================
+   
 
     configurarSIGINT();
 
@@ -50,9 +45,7 @@ int main(int argc, char* argv[]) {
         << std::endl;
 
 
-    // =========================================
-    // CARGAR PLAN
-    // =========================================
+    
 
     std::vector<Actividad> actividades =
         cargarPlan(nombreArchivo);
@@ -60,9 +53,7 @@ int main(int argc, char* argv[]) {
     construirDependientes(actividades);
 
 
-    // =========================================
-    // VALIDAR DAG
-    // =========================================
+    
 
     if (!validarDAG(actividades)) {
 
@@ -83,27 +74,19 @@ int main(int argc, char* argv[]) {
         << std::endl;
 
 
-    // =========================================
-    // PROCESOS ACTUALMENTE EJECUTANDOSE
-    // =========================================
+    
 
     std::vector<ProcesoActividad> procesosEnEjecucion;
 
-// Mensajes que cada actividad recibira
-// desde sus actividades predecesoras
 std::unordered_map<
     std::string,
     std::vector<std::string>
            >insumosPendientes;
-    // =========================================
-    // CICLO PRINCIPAL DEL PLANIFICADOR
-    // =========================================
+    
 
     while (true) {
 
-        // -------------------------------------
-        // BUSCAR ACTIVIDADES QUE PUEDEN INICIAR
-        // -------------------------------------
+        
 
         std::vector<std::string> listas =
             obtenerActividadesListas(
@@ -112,9 +95,7 @@ std::unordered_map<
             );
 
 
-        // -------------------------------------
-        // MARCARLAS COMO EJECUTANDO
-        // -------------------------------------
+      
 
         if (!listas.empty()) {
 
@@ -124,10 +105,7 @@ std::unordered_map<
             );
 
 
-            // ---------------------------------
-            // CREAR LOS PROCESOS HIJOS
-            // ---------------------------------
-
+           
             for (const auto& id : listas) {
 
                 for (const auto& actividad : actividades) {
@@ -144,9 +122,9 @@ std::unordered_map<
                      insumos
     );
 
-if (pid != -1) {
-    insumosPendientes.erase(id);
-}
+        if (pid != -1) {
+            insumosPendientes.erase(id);
+        }
                         if (pid == -1) {
 
                             std::cerr
@@ -154,8 +132,7 @@ if (pid != -1) {
                                 << id
                                 << std::endl;
 
-                            // Si ni siquiera puede crearse
-                            // el proceso, se considera fallo.
+                            
                             cancelarRamaPorFallo(
                                 actividades,
                                 id
@@ -169,20 +146,11 @@ if (pid != -1) {
         }
 
 
-        // =====================================
-        // SI NO QUEDA NINGUN PROCESO ACTIVO
-        // =====================================
+        
 
         if (procesosEnEjecucion.empty()) {
 
-            /*
-             * Si no habia actividades listas,
-             * significa que la planificacion termino.
-             *
-             * Si habia listas pero todas fallaron
-             * al crear sus procesos, repetimos el
-             * ciclo para buscar otras ramas.
-             */
+            
 
             if (listas.empty()) {
                 break;
@@ -192,10 +160,7 @@ if (pid != -1) {
         }
 
 
-        // =====================================
-        // ESPERAR AL PRIMER HIJO QUE TERMINE
-        // =====================================
-
+        
         std::string idFinalizada;
         std::string mensaje;
 
@@ -219,9 +184,6 @@ if (pid != -1) {
         }
 
 
-        // =====================================
-        // MOSTRAR RESULTADO
-        // =====================================
 
         std::cout
             << "\nActividad finalizada: "
@@ -234,41 +196,29 @@ if (pid != -1) {
             << std::endl;
 
 
-        // =====================================
-        // TERMINO CORRECTAMENTE
-        // =====================================
 
         if (codigoSalida == 0) {
-            // Guardar el mensaje como insumo
-// para todas las actividades dependientes
-for (const auto& actividad : actividades) {
+           
+            for (const auto& actividad : actividades) {
 
-    if (actividad.id == idFinalizada) {
+                if (actividad.id == idFinalizada) {
 
-        for (const auto& idDependiente :
-             actividad.dependientes) {
+                    for (const auto& idDependiente : actividad.dependientes) {
 
-            insumosPendientes[
-                idDependiente
-            ].push_back(mensaje);
-        }
+                        insumosPendientes[
+                            idDependiente
+                        ].push_back(mensaje);
+                    }
 
-        break;
-    }
-}
+                 break;
+             }
+            }
 
             std::vector<std::string> terminadas = {
                 idFinalizada
             };
 
-            /*
-             * Esta funcion de Persona 1:
-             *
-             * - marca la actividad TERMINADA
-             * - disminuye dependenciasRestantes
-             *   de sus actividades dependientes
-             */
-
+            
             terminarActividades(
                 actividades,
                 terminadas
@@ -280,19 +230,11 @@ for (const auto& actividad : actividades) {
         }
 
 
-        // =====================================
-        // EL PROCESO FALLO
-        // =====================================
+       
 
         else {
 
-            /*
-             * Esta funcion de Persona 2:
-             *
-             * - actividad original = FALLIDA
-             * - descendientes = CANCELADA
-             * - otras ramas siguen funcionando
-             */
+           
 
             cancelarRamaPorFallo(
                 actividades,
@@ -308,31 +250,17 @@ for (const auto& actividad : actividades) {
                 << std::endl;
         }
 
-        /*
-         * Volvemos arriba.
-         *
-         * obtenerActividadesListas() revisara:
-         *
-         * - dependenciasRestantes
-         * - estado PENDIENTE
-         * - cantidad actualmente EJECUTANDO
-         * - limite K
-         *
-         * y lanzara las siguientes actividades.
-         */
+       
     }
 
 
-    // =========================================
-    // RESULTADO FINAL
-    // =========================================
 
     std::cout
         << "\nPlanificacion finalizada."
         << std::endl;
 
 
-    // Opcional: mostrar estado final de cada actividad
+    
 
     for (const auto& actividad : actividades) {
 

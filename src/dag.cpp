@@ -6,9 +6,7 @@
 
 void construirDependientes(std::vector<Actividad>& actividades) {
 
-    // Primera pasada:
-    // limpiar todos los dependientes e inicializar
-    // la cantidad de dependencias pendientes.
+    
     for (auto& actividad : actividades) {
 
         actividad.dependientes.clear();
@@ -19,8 +17,7 @@ void construirDependientes(std::vector<Actividad>& actividades) {
             );
     }
 
-    // Segunda pasada:
-    // construir las relaciones entre actividades.
+    
     for (const auto& actividad : actividades) {
 
         for (const auto& dependencia : actividad.dependencias) {

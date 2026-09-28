@@ -5,11 +5,11 @@
 #include <vector>
 
 enum class Estado {
-    PENDIENTE, // aun no comienza
-    EJECUTANDO, // el proceso está ejecutando la actividad
-    TERMINADA, // terminó correctamente
-    FALLIDA, // error
-    CANCELADA // se cancelo
+    PENDIENTE, 
+    EJECUTANDO, 
+    TERMINADA, 
+    FALLIDA, 
+    CANCELADA 
 };
 
 struct Actividad {
