@@ -19,14 +19,13 @@ Además, el programa recibe un valor `K`, que corresponde a la cantidad máxima 
 El programa lee un archivo de texto con el siguiente formato:
 
 ID : nombre : tiempo_ms : dependencias
-Ejemplo:```text
+Ejemplo:
 1 : prender_carbon : 500 :
 2 : comprar_carne : 1200 :
 3 : comprar_pan : 300 :
 4 : asar_longaniza : 800 : 1, 2
 5 : armar_choripan : 250 : 3, 4
 6 : servir_mesa : 100 : 5
-```
 
 Si una actividad no tiene tiempo definido, se le asigna un tiempo entre 100 y 5000 milisegundos.
 
